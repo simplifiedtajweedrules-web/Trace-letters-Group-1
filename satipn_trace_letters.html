@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SATIPN Trace the Letters</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e0dfd8;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .top-label { font-size: 14px; color: #888; }
+    .letter-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .nav-btn:hover { background: #EEEDFE; border-color: #7F77DD; color: #534AB7; }
+    .nav-btn.active { background: #534AB7; color: #fff; border-color: #534AB7; }
+    .letter-label {
+      font-size: 14px;
+      color: #888;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .canvas-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    canvas {
+      border-radius: 12px;
+      border: 1px solid #e0dfd8;
+      background: #fafaf8;
+      touch-action: none;
+      cursor: crosshair;
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      height: auto;
+    }
+    .color-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .color-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .color-dot.active {
+      border-color: #534AB7;
+      transform: scale(1.2);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #222;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #f5f4f0; }
+    .btn.green {
+      background: #1D9E75;
+      color: #fff;
+      border-color: #1D9E75;
+    }
+    .btn.green:hover { background: #0F6E56; }
+    .hint {
+      font-size: 13px;
+      color: #aaa;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="top-label">Pick a letter to trace</div>
+      <div class="top-label" id="current-label">S</div>
+    </div>
+
+    <div class="letter-nav">
+      <button class="nav-btn active" onclick="setLetter('S',this)">S</button>
+      <button class="nav-btn" onclick="setLetter('A',this)">A</button>
+      <button class="nav-btn" onclick="setLetter('T',this)">T</button>
+      <button class="nav-btn" onclick="setLetter('I',this)">I</button>
+      <button class="nav-btn" onclick="setLetter('P',this)">P</button>
+      <button class="nav-btn" onclick="setLetter('N',this)">N</button>
+    </div>
+
+    <div class="letter-label" id="letter-label">Trace the letter S</div>
+
+    <div class="canvas-wrap">
+      <canvas id="traceCanvas" width="420" height="320"></canvas>
+    </div>
+
+    <div class="color-row">
+      <div class="color-dot active" style="background:#E24B4A;" onclick="setColor('#E24B4A',this)"></div>
+      <div class="color-dot" style="background:#534AB7;" onclick="setColor('#534AB7',this)"></div>
+      <div class="color-dot" style="background:#1D9E75;" onclick="setColor('#1D9E75',this)"></div>
+      <div class="color-dot" style="background:#BA7517;" onclick="setColor('#BA7517',this)"></div>
+      <div class="color-dot" style="background:#D4537E;" onclick="setColor('#D4537E',this)"></div>
+      <div class="color-dot" style="background:#222222;" onclick="setColor('#222222',this)"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" onclick="clearCanvas()">clear</button>
+      <button class="btn green" onclick="nextLetter()">next letter →</button>
+    </div>
+
+    <div class="hint">Follow the dotted letter with your finger or mouse</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('traceCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let color = '#E24B4A';
+    let currentLetter = 'S';
+    const letters = ['S','A','T','I','P','N'];
+
+    const PATHS = {
+      S: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.65, h*0.22);
+        c.bezierCurveTo(w*0.55,h*0.12, w*0.25,h*0.12, w*0.28,h*0.35);
+        c.bezierCurveTo(w*0.30,h*0.48, w*0.65,h*0.48, w*0.68,h*0.62);
+        c.bezierCurveTo(w*0.72,h*0.80, w*0.38,h*0.88, w*0.28,h*0.78);
+      },
+      A: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.5, h*0.15);
+        c.lineTo(w*0.22, h*0.85);
+        c.moveTo(w*0.5, h*0.15);
+        c.lineTo(w*0.78, h*0.85);
+        c.moveTo(w*0.33, h*0.57);
+        c.lineTo(w*0.67, h*0.57);
+      },
+      T: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.2, h*0.18);
+        c.lineTo(w*0.8, h*0.18);
+        c.moveTo(w*0.5, h*0.18);
+        c.lineTo(w*0.5, h*0.85);
+      },
+      I: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.35, h*0.18);
+        c.lineTo(w*0.65, h*0.18);
+        c.moveTo(w*0.5, h*0.18);
+        c.lineTo(w*0.5, h*0.85);
+        c.moveTo(w*0.35, h*0.85);
+        c.lineTo(w*0.65, h*0.85);
+      },
+      P: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.3, h*0.15);
+        c.lineTo(w*0.3, h*0.85);
+        c.moveTo(w*0.3, h*0.15);
+        c.bezierCurveTo(w*0.75,h*0.15, w*0.75,h*0.55, w*0.3,h*0.55);
+      },
+      N: (c,w,h) => {
+        c.beginPath();
+        c.moveTo(w*0.25, h*0.15);
+        c.lineTo(w*0.25, h*0.85);
+        c.moveTo(w*0.25, h*0.15);
+        c.lineTo(w*0.75, h*0.85);
+        c.moveTo(w*0.75, h*0.15);
+        c.lineTo(w*0.75, h*0.85);
+      },
+    };
+
+    function drawGuide(letter) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width, h = canvas.height;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(140,130,210,0.18)';
+      ctx.lineWidth = 40;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+      PATHS[letter](ctx, w, h);
+      ctx.stroke();
+
+      ctx.setLineDash([14, 9]);
+      ctx.strokeStyle = 'rgba(120,110,200,0.38)';
+      ctx.lineWidth = 26;
+      PATHS[letter](ctx, w, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      const sx = getStartX(letter, w), sy = getStartY(letter, h);
+      ctx.save();
+      ctx.font = '600 13px system-ui';
+      ctx.fillStyle = 'rgba(83,74,183,0.55)';
+      ctx.fillText('start here', sx - 36, sy - 18);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(83,74,183,0.55)';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function getStartX(l, w) {
+      return {S:w*0.65, A:w*0.5, T:w*0.2, I:w*0.35, P:w*0.3, N:w*0.25}[l];
+    }
+    function getStartY(l, h) {
+      return {S:h*0.22, A:h*0.15, T:h*0.18, I:h*0.18, P:h*0.15, N:h*0.15}[l];
+    }
+
+    function setLetter(l, btn) {
+      currentLetter = l;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('current-label').textContent = l;
+      document.getElementById('letter-label').textContent = 'Trace the letter ' + l;
+      drawGuide(l);
+    }
+
+    function setColor(c, dot) {
+      color = c;
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      if (e.touches) {
+        return {
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+      }
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      drawing = true;
+      const p = getPos(e);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    });
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => drawing = false);
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault(); drawing = true;
+      const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }, {passive: false});
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }, {passive: false});
+    canvas.addEventListener('touchend', () => drawing = false);
+
+    function clearCanvas() { drawGuide(currentLetter); }
+
+    function nextLetter() {
+      const idx = letters.indexOf(currentLetter);
+      const nextIdx = (idx + 1) % letters.length;
+      const btn = document.querySelectorAll('.nav-btn')[nextIdx];
+      setLetter(letters[nextIdx], btn);
+    }
+
+    drawGuide('S');
+  </script>
+</body>
+</html>

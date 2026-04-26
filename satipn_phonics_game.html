@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SATIPN Phonics Word Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e0dfd8;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .stars { font-size: 18px; letter-spacing: 2px; }
+    .progress { font-size: 13px; color: #888; }
+    .word-display { text-align: center; margin-bottom: 1.5rem; }
+    .big-word {
+      font-size: 56px;
+      font-weight: 600;
+      color: #534AB7;
+      letter-spacing: 8px;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .meaning {
+      font-size: 15px;
+      color: #888;
+      margin-bottom: 18px;
+    }
+    .hear-btn {
+      padding: 9px 24px;
+      border-radius: 20px;
+      border: 1px solid #AFA9EC;
+      background: #EEEDFE;
+      color: #3C3489;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .hear-btn:hover { background: #CECBF6; }
+    .hear-btn.playing { background: #534AB7; color: #fff; }
+    .divider {
+      border: none;
+      border-top: 1px solid #ececec;
+      margin: 1.5rem 0;
+    }
+    .slots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .slot {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 600;
+      color: #534AB7;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .slot.filled { border-style: solid; border-color: #534AB7; background: #EEEDFE; }
+    .slot.correct { border-color: #1D9E75; background: #E1F5EE; color: #085041; cursor: default; }
+    .slot.wrong { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake 0.3s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .bank {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .tile {
+      width: 54px;
+      height: 54px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 24px;
+      font-weight: 600;
+      color: #222;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .tile:hover { border-color: #7F77DD; background: #EEEDFE; color: #534AB7; }
+    .tile.used { opacity: 0.2; pointer-events: none; }
+    .feedback {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      min-height: 24px;
+      margin-bottom: 1rem;
+    }
+    .feedback.good { color: #1D9E75; }
+    .feedback.bad { color: #E24B4A; }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .btn {
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #222;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #f5f4f0; }
+    .btn.green {
+      background: #1D9E75;
+      color: #fff;
+      border-color: #1D9E75;
+    }
+    .btn.green:hover { background: #0F6E56; }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="stars" id="stars">☆☆☆☆☆☆☆☆☆</div>
+      <div class="progress" id="progress">Word 1 of 9</div>
+    </div>
+
+    <div class="word-display">
+      <div class="big-word" id="big-word"></div>
+      <div class="meaning" id="meaning"></div>
+      <button class="hear-btn" id="btn-whole" onclick="speakWhole()">hear the word</button>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="slots" id="slots"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="bank" id="bank"></div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="clear_()">clear</button>
+      <button class="btn green" onclick="check()">check ✓</button>
+    </div>
+
+    <div class="nav">
+      <button class="btn" onclick="go(-1)">← back</button>
+      <button class="btn" onclick="go(1)">next →</button>
+    </div>
+  </div>
+
+  <script>
+    const WORDS = [
+      {word:'pan', meaning:'a flat cooking container'},
+      {word:'sap', meaning:'juice from a tree'},
+      {word:'pip', meaning:'a small seed inside fruit'},
+      {word:'tin', meaning:'a metal can'},
+      {word:'nit', meaning:'a tiny bug on hair'},
+      {word:'tap', meaning:'a handle that controls water'},
+      {word:'in',  meaning:'inside something'},
+      {word:'a',   meaning:'one of something'},
+      {word:'pin', meaning:'a sharp thin stick'},
+    ];
+
+    let idx=0, answer=[], used=[], bank=[], solved=new Array(9).fill(false);
+
+    function shuffle(arr){
+      const a=[...arr];
+      for(let i=a.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    }
+
+    function render(){
+      const w=WORDS[idx];
+      document.getElementById('progress').textContent='Word '+(idx+1)+' of '+WORDS.length;
+      document.getElementById('big-word').textContent=w.word.toUpperCase();
+      document.getElementById('meaning').textContent=w.meaning;
+      document.getElementById('feedback').textContent='';
+      document.getElementById('feedback').className='feedback';
+      answer=new Array(w.word.length).fill('');
+      bank=shuffle(w.word.split(''));
+      used=new Array(bank.length).fill(false);
+      renderSlots(); renderBank();
+    }
+
+    function speakWhole(){
+      if(!('speechSynthesis' in window)) return;
+      const btn=document.getElementById('btn-whole');
+      btn.classList.add('playing');
+      setTimeout(()=>btn.classList.remove('playing'),800);
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(WORDS[idx].word);
+      u.rate=0.7; u.pitch=1.1;
+      speechSynthesis.speak(u);
+    }
+
+    function renderSlots(){
+      const c=document.getElementById('slots'); c.innerHTML='';
+      for(let i=0;i<WORDS[idx].word.length;i++){
+        const d=document.createElement('div');
+        d.className='slot'+(answer[i]?' filled':'')+(solved[idx]?' correct':'');
+        d.textContent=answer[i]?answer[i].toUpperCase():'';
+        if(answer[i]&&!solved[idx]) d.onclick=()=>removeSlot(i);
+        c.appendChild(d);
+      }
+    }
+
+    function renderBank(){
+      const c=document.getElementById('bank'); c.innerHTML='';
+      bank.forEach((l,i)=>{
+        const d=document.createElement('div');
+        d.className='tile'+(used[i]?' used':'');
+        d.textContent=l.toUpperCase();
+        d.onclick=()=>addLetter(i,l);
+        c.appendChild(d);
+      });
+    }
+
+    function addLetter(i,l){
+      if(used[i]||solved[idx]) return;
+      const empty=answer.indexOf('');
+      if(empty===-1) return;
+      answer[empty]=l; used[i]=true;
+      renderSlots(); renderBank();
+    }
+
+    function removeSlot(si){
+      const l=answer[si]; answer[si]='';
+      for(let i=0;i<bank.length;i++){
+        if(used[i]&&bank[i]===l){used[i]=false;break;}
+      }
+      renderSlots(); renderBank();
+    }
+
+    function clear_(){
+      answer=new Array(WORDS[idx].word.length).fill('');
+      used=new Array(bank.length).fill(false);
+      document.getElementById('feedback').textContent='';
+      document.getElementById('feedback').className='feedback';
+      renderSlots(); renderBank();
+    }
+
+    function check(){
+      const w=WORDS[idx];
+      if(answer.includes('')){show('Fill all the letters first!','bad');return;}
+      if(answer.join('')===w.word){
+        show('Well done! '+w.word.toUpperCase()+' is correct!','good');
+        if(!solved[idx]){solved[idx]=true;updateStars();}
+        document.querySelectorAll('.slot').forEach(s=>{s.classList.remove('filled');s.classList.add('correct');});
+        if('speechSynthesis' in window){
+          speechSynthesis.cancel();
+          const u=new SpeechSynthesisUtterance(w.word);
+          u.rate=0.8; speechSynthesis.speak(u);
+        }
+      } else {
+        show('Not quite — try again!','bad');
+        document.querySelectorAll('.slot').forEach(s=>{
+          s.classList.add('wrong');
+          setTimeout(()=>s.classList.remove('wrong'),350);
+        });
+      }
+    }
+
+    function show(msg,cls){
+      const f=document.getElementById('feedback');
+      f.textContent=msg; f.className='feedback '+cls;
+    }
+
+    function updateStars(){
+      const n=solved.filter(Boolean).length;
+      document.getElementById('stars').textContent='★'.repeat(n)+'☆'.repeat(9-n);
+    }
+
+    function go(dir){idx=(idx+dir+WORDS.length)%WORDS.length;render();}
+
+    render();
+  </script>
+</body>
+</html>
